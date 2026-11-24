@@ -155,7 +155,7 @@ input[type=range]{width:100%;margin:12px 0}
 <input type="file" id="f-imp" accept="application/json,.json" hidden>
 <script>
 'use strict';
-const VER='v6';
+const VER='v7';
 const FONT="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const FALL={sans:"-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",serif:"Georgia,'Times New Roman',serif",mono:"Menlo,Consolas,'Courier New',monospace",hand:"'Marker Felt','Comic Sans MS',cursive"};
 const FONTS=[['','Padrão','sans'],['Helvetica Neue','Helvetica Neue','sans'],['Arial','Arial','sans'],['Verdana','Verdana','sans'],['Trebuchet MS','Trebuchet MS','sans'],['Futura','Futura','sans'],['Avenir Next','Avenir Next','sans'],['Gill Sans','Gill Sans','sans'],['Optima','Optima','sans'],['DIN Alternate','DIN Alternate','sans'],['Thonburi','Thonburi','sans'],['Georgia','Georgia','serif'],['Times New Roman','Times New Roman','serif'],['Palatino','Palatino','serif'],['Charter','Charter','serif'],['Cochin','Cochin','serif'],['Baskerville','Baskerville','serif'],['Copperplate','Copperplate','serif'],['Courier New','Courier New','mono'],['Menlo','Menlo','mono'],['American Typewriter','American Typewriter','serif'],['Chalkboard SE','Chalkboard SE','hand'],['Noteworthy','Noteworthy','hand'],['Marker Felt','Marker Felt','hand']];
@@ -457,7 +457,7 @@ const MKNAME={star:'Estrela',flag:'Bandeira',check:'Feito',warn:'Atenção',ask:
 const TKR=8; /* raio do círculo de tarefa em 24 */
 const tkArc=p=>{if(p<=0)return'';if(p>=100)return'';const a=p/100*2*Math.PI-Math.PI/2,x=12+TKR*Math.cos(a),y=12+TKR*Math.sin(a);return `M12 ${12-TKR}A${TKR} ${TKR} 0 ${p>50?1:0} 1 ${x.toFixed(2)} ${y.toFixed(2)}L12 12z`};
 function uiIcon(nm,sz,sw){sz=sz||22;const d={
- link:ICONS.link,mp:ICONS.mp,up:'M12 19V5M6 11l6-6 6 6',down:'M12 5v14M6 13l6 6 6-6',back:'M15 5l-7 7 7 7',undo:'M9 7L4 12l5 5M4 12h10a6 6 0 0 1 0 12',redo:'M15 7l5 5-5 5M20 12H10a6 6 0 0 0 0 12',
+ link:ICONS.link,mp:ICONS.mp,cpy:'M8 8h11v12H8zM5 16V4h11M11 12h5M11 15h5',paste:'M9 4h6v3H9zM9 5.5H6V20h12V5.5h-3M9 12h6M9 15.5h4',up:'M12 19V5M6 11l6-6 6 6',down:'M12 5v14M6 13l6 6 6-6',back:'M15 5l-7 7 7 7',undo:'M9 7L4 12l5 5M4 12h10a6 6 0 0 1 0 12',redo:'M15 7l5 5-5 5M20 12H10a6 6 0 0 0 0 12',
  search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',style:'M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2-.6-1.3.2-2.5 1.6-2.5H17a4 4 0 0 0 4-4c0-5-4-9.5-9-9.5zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01',
  share:'M12 15V4M8 8l4-4 4 4M5 13v6h14v-6',more:'M5 12h.01M12 12h.01M19 12h.01',gear:'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM19 12l2-1-1.5-3-2.2.6-1.6-1.6.6-2.2-3-1.5-1 2h-2.2l-1-2-3 1.5.6 2.2L6 8.6 3.8 8 2.5 11l2 1v2l-2 1 1.5 3 2.2-.6 1.6 1.6-.6 2.2 3 1.5 1-2h2.2l1 2 3-1.5-.6-2.2 1.6-1.6 2.2.6 1.5-3-2-1z',
  plus:'M12 5v14M5 12h14',minus:'M5 12h14',fit:'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
@@ -657,11 +657,11 @@ function showHint(t){$('#hint-t').textContent=t;$('#hint').hidden=false}
 function hideHint(){$('#hint').hidden=true}
 /* ---------- barra inferior ---------- */
 const BAR_SEL=[
- ['child','Filho','addchild'],['sib','Irmão','addsib'],['edit','Editar','edit'],['palette','Cor/forma','nstyle'],['tag','Marcador','mark'],['note','Nota','note'],['img','Imagem','img'],['task','Tarefa','task'],['link','Link','link'],['fit','Posição','rpos'],['rel','Relação','rel'],['collapse','Recolher','collapse'],['up','Subir','up'],['down','Descer','dn'],['par','Pai','wrap'],['dup','Duplicar','dup'],['trash','Excluir','del']];
-const BAR_NONE=[['fit','Ajustar','fit'],['plus','Outro pai','addroot'],['img','Imagem solta','freeimg'],['link','Site solto','freelink'],['pdf','PDF solto','freepdf'],['mp','Mapa solto','freemap'],['tmpl','Estrutura','mstyle'],['text','Texto','outline'],['expand','Expandir tudo','expall'],['collapse','Recolher tudo','colall']];
+ ['child','Filho','addchild'],['sib','Irmão','addsib'],['edit','Editar','edit'],['palette','Cor/forma','nstyle'],['tag','Marcador','mark'],['note','Nota','note'],['img','Imagem','img'],['task','Tarefa','task'],['link','Link','link'],['fit','Posição','rpos'],['rel','Relação','rel'],['collapse','Recolher','collapse'],['up','Subir','up'],['down','Descer','dn'],['par','Pai','wrap'],['dup','Duplicar','dup'],['cpy','Copiar','copy'],['paste','Colar','paste'],['trash','Excluir','del']];
+const BAR_NONE=[['fit','Ajustar','fit'],['plus','Outro pai','addroot'],['img','Imagem solta','freeimg'],['link','Site solto','freelink'],['pdf','PDF solto','freepdf'],['mp','Mapa solto','freemap'],['paste','Colar solto','paste'],['tmpl','Estrutura','mstyle'],['text','Texto','outline'],['expand','Expandir tudo','expall'],['collapse','Recolher tudo','colall']];
 function updateBars(){const bar=$('#bar'),hasSel=!!(S.sel&&findNode(S.sel)),rootSel=hasSel&&S.sel===M.root.id,anyRoot=hasSel&&!findNode(S.sel).par;let h='';
   if(S.selRel){h=[['edit','Rótulo','relt'],['trash','Excluir','reld'],['close','Fechar','relx']].map(b=>`<button class="bb${b[2]==='reld'?' dg':''}" data-b="${b[2]}">${uiIcon(b[0],22)}<span>${b[1]}</span></button>`).join('')}
-  else{const sn=hasSel&&findNode(S.sel),list=hasSel?BAR_SEL.filter(b=>b[2]!=='rpos'||(sn&&(sn.n.ox||sn.n.oy))):BAR_NONE;h=list.map(b=>{let off='';if(anyRoot&&b[2]==='addsib')b=['sib','Outro pai','addroot'];if(anyRoot&&['up','dn','wrap'].includes(b[2]))off=' off';if(rootSel&&['dup','del'].includes(b[2]))off=' off';if(hasSel&&b[2]==='collapse'){const f=findNode(S.sel);if(!(f.n.c&&f.n.c.length))off=' off'}
+  else{const sn=hasSel&&findNode(S.sel),list=hasSel?BAR_SEL.filter(b=>b[2]!=='rpos'||(sn&&(sn.n.ox||sn.n.oy))):BAR_NONE;h=list.map(b=>{let off='';if(anyRoot&&b[2]==='addsib')b=['sib','Outro pai','addroot'];if(anyRoot&&['up','dn','wrap'].includes(b[2]))off=' off';if(rootSel&&['dup','del'].includes(b[2]))off=' off';if(b[2]==='paste'&&!CLIP)off=' off';if(hasSel&&b[2]==='collapse'){const f=findNode(S.sel);if(!(f.n.c&&f.n.c.length))off=' off'}
       const on=(b[2]==='rel'&&S.relFrom)?' on':'';return `<button class="bb${off}${on}${b[2]==='del'?' dg':''}" data-b="${b[2]}">${uiIcon(b[0],22)}<span>${b[1]}</span></button>`}).join('')}
   if(bar.dataset.k!==h){bar.innerHTML=h;bar.dataset.k=h}
   $('#t-undo').disabled=!UN.st.length;$('#t-redo').disabled=!UN.rd.length;$('#t-name').textContent=M?M.name:''}
@@ -673,7 +673,7 @@ function barAction(a){const id=S.sel;
    case'addchild':addChild(id);break;case'addsib':addSibling(id);break;case'addroot':addRoot();break;case'freeimg':pickImage('__new__');break;case'freelink':newFreeLink();break;case'freemap':pickMap(mid=>{const t=D.recs[mid]&&D.recs[mid].v;addRoot({t:t?t.name:'Mapa',mp:mid})});break;case'freepdf':{const f=$('#f-pdf');f.value='';f.click();break}case'edit':startEdit(id,false);break;
    case'nstyle':openNodeStyle(id);break;case'mark':openMarkers(id);break;case'note':openNote(id);break;case'img':pickImage(id);break;case'task':openTask(id);break;case'link':openLinkSheet(id);break;case'rpos':mutate(()=>{const f=findNode(id);if(f){delete f.n.ox;delete f.n.oy}},relayout);break;
    case'rel':if(S.relFrom){S.relFrom=null;hideHint()}else{S.relFrom=id;showHint('Toque no tópico de destino da relação')}draw();break;
-   case'collapse':toggleCl(id);break;case'up':reorder(id,-1);break;case'dn':reorder(id,1);break;case'wrap':wrapParent(id);break;case'dup':dupNode(id);break;
+   case'collapse':toggleCl(id);break;case'up':reorder(id,-1);break;case'dn':reorder(id,1);break;case'wrap':wrapParent(id);break;case'dup':dupNode(id);break;case'copy':copyNode(id);break;case'paste':pasteClip(id);break;
    case'del':{const f=findNode(id);const k=f?countAll(f.n):0;if(k>3&&!confirm('Excluir este tópico e '+(k-1)+' subtópicos?'))break;delNode(id);break}
    case'relt':openRelSheet(S.selRel);break;
    case'reld':mutate(()=>{M.rel=(M.rel||[]).filter(r=>r.id!==S.selRel);S.selRel=null});break;
@@ -683,6 +683,8 @@ function bindKeys(){document.addEventListener('keydown',e=>{if(S.view!=='ed'||S.
   const mod=e.metaKey||e.ctrlKey,id=S.sel;
   if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
   if(mod&&e.key.toLowerCase()==='f'){e.preventDefault();openSearch();return}
+  if(mod&&e.key.toLowerCase()==='c'){if(id){e.preventDefault();copyNode(id)}return}
+  if(mod&&e.key.toLowerCase()==='v'){e.preventDefault();pasteClip(id);return}
   if(!id)return;
   if(e.key==='Enter'){e.preventDefault();addSibling(id)}else if(e.key==='Tab'){e.preventDefault();addChild(id)}
   else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();barAction('del')}
@@ -698,6 +700,30 @@ function navKey(k){const f=findNode(S.sel);if(!f)return;const g=G.get(S.sel),lay
     if(!f.par){const c=kids.find((_,i)=>(lay==='bi'?(i%2===0?1:-1):(lay==='left'?-1:1))===(k==='ArrowRight'?1:k==='ArrowLeft'?-1:9));t=c?c.id:null}
     else t=k===away?toChild():k===back?toPar():k==='ArrowUp'?sib(-1):sib(1)}
   if(t){S.sel=t;draw();centerOn(t)}}
+
+/* ---------- copiar e colar estruturas (área de transferência própria; fica só neste aparelho e não sincroniza) ---------- */
+let CLIP=null;const CLIP_MAX=6e6;
+function nodeIds(n,set){set.add(n.id);(n.c||[]).forEach(c=>nodeIds(c,set));return set}
+function buildClip(m,roots,name){const ids=new Set(),imgs={},files={};roots=roots.map(r=>JSON.parse(JSON.stringify(r)));
+  roots.forEach(r=>{nodeIds(r,ids);usedImgs(r,new Set()).forEach(k=>{if(m.imgs&&m.imgs[k])imgs[k]=m.imgs[k];if(m.files&&m.files[k])files[k]=m.files[k]})});
+  const rel=(m.rel||[]).filter(x=>ids.has(x.a)&&ids.has(x.b)).map(x=>JSON.parse(JSON.stringify(x)));
+  const c={roots,imgs,files,rel,name:name||'',at:Date.now(),n:ids.size};
+  if(JSON.stringify(c).length>CLIP_MAX){toast('Estrutura grande demais para copiar (acima de 6 MB)');return null}return c}
+function saveClip(c,msg){CLIP=c;IDB.set('clip',c).catch(()=>{});if(S.view==='ed'&&M)updateBars();toast(msg)}
+function copyNode(id){const f=findNode(id);if(!f)return;const c=buildClip(M,[f.n]);if(c)saveClip(c,'Copiado: '+c.n+(c.n===1?' tópico':' tópicos'))}
+function copyMapOf(m){const c=buildClip(m,[m.root].concat(m.fl||[]),m.name);if(c){c.map=1;saveClip(c,'Mapa copiado: '+c.n+' tópicos')}}
+function pasteClip(tid){if(!M)return;if(!CLIP)return toast('Nada copiado');
+  const c=JSON.parse(JSON.stringify(CLIP)),idm={},km={};
+  const re=x=>{const o=x.id;x.id=nid();idm[o]=x.id;if(x.im)x.im=km[x.im]||(km[x.im]=uid());if(x.pf)x.pf=km[x.pf]||(km[x.pf]=uid());(x.c||[]).forEach(re)};
+  c.roots.forEach(re);pushUndo();
+  Object.keys(km).forEach(o=>{if(c.imgs[o]){M.imgs=M.imgs||{};M.imgs[km[o]]=c.imgs[o]}else if(c.files[o]){M.files=M.files||{};M.files[km[o]]=c.files[o]}});
+  (c.rel||[]).forEach(r=>{if(idm[r.a]&&idm[r.b])(M.rel=M.rel||[]).push(Object.assign({},r,{id:nid(),a:idm[r.a],b:idm[r.b]}))});
+  const t=tid&&findNode(tid);let first=null;
+  c.roots.forEach((r,i)=>{delete r.ox;delete r.oy;delete r.px;delete r.py;
+    if(i===0&&t){t.n.cl=0;(t.n.c=t.n.c||[]).push(r)}else{const sp=freeSpot(60);r.px=sp[0];r.py=sp[1];(M.fl=M.fl||[]).push(r);draw()}
+    if(!first)first=r});
+  S.sel=first.id;S.selRel=null;touch(M);draw();centerOn(first.id);
+  toast('Colado: '+c.n+(c.n===1?' tópico':' tópicos')+(t?' dentro de "'+(t.n.t||'tópico').slice(0,24)+'"':''))}
 /* ---------- outline <-> árvore ---------- */
 function parseOutline(txt){const lines=String(txt||'').replace(/\r/g,'').split('\n').filter(l=>l.trim()!==''),items=[];
   lines.forEach(l=>{const m=l.match(/^([ \t]*)(?:[-*•]\s+)?(.*)$/);let ind=0;for(const ch of m[1])ind+=ch==='\t'?2:1;ind=Math.floor(ind/2);items.push({ind,t:m[2].trim()})});
@@ -910,9 +936,10 @@ function openNewMap(){let fam='';const draw2=()=>{const list=TEMPLATES.filter(t=
     const bindT=()=>onSheet(root,'[data-t]',el=>{const t=TEMPLATES.find(x=>x.id===el.dataset.t),m=mapFromTemplate(t);addMap(m);closeSheet(true);openMap(m.id)});
     bindT();onSheet(root,'[data-f]',el=>{fam=el.dataset.f;root.querySelectorAll('[data-f]').forEach(b=>b.classList.toggle('on',b===el));$('#tl').innerHTML=draw2();bindT()})},{tall:true})}
 function openMapMenu(id){const m=D.recs[id]&&D.recs[id].v;if(!m)return;
-  openSheet(shHead(m.name)+`<div class="sr" data-m="open"><span>Abrir</span></div><div class="sr" data-m="ren"><span>Renomear</span></div><div class="sr" data-m="dup"><span>Duplicar</span></div><div class="sr" data-m="pdf"><span>Compartilhar PDF</span></div><div class="sr" data-m="del" style="color:#ff6b61"><span>Excluir</span></div>`,root=>{bindClose(root);
+  openSheet(shHead(m.name)+`<div class="sr" data-m="open"><span>Abrir</span></div><div class="sr" data-m="ren"><span>Renomear</span></div><div class="sr" data-m="dup"><span>Duplicar</span></div><div class="sr" data-m="cpm"><span>Copiar mapa</span></div><div class="sr" data-m="pdf"><span>Compartilhar PDF</span></div><div class="sr" data-m="del" style="color:#ff6b61"><span>Excluir</span></div>`,root=>{bindClose(root);
     onSheet(root,'[data-m]',el=>{const a=el.dataset.m;closeSheet(true);
       if(a==='open')openMap(id);
+      else if(a==='cpm')copyMapOf(m);
       else if(a==='ren')askText('Renomear mapa',m.name,v=>{m.name=v;touch(m);renderList()});
       else if(a==='dup'){const c=JSON.parse(JSON.stringify(m));c.id=uid();c.name=m.name+' (cópia)';c.cr=c.up=Date.now();const re=x=>{x.id=nid();(x.c||[]).forEach(re)};re(c.root);(c.fl||[]).forEach(re);c.rel=[];addMap(c);renderList();toast('Mapa duplicado')}
       else if(a==='pdf'){M=m;UN={st:[],rd:[]};openExport()}
@@ -1113,8 +1140,8 @@ function openExport(){const m=M;if(!m)return;let busy=false;
 function setIcons(){const set=(id,n,s)=>{const e=document.getElementById(id);if(e)e.innerHTML=uiIcon(n,s||22)};
   set('b-set','gear');set('t-back','back');set('t-undo','undo');set('t-redo','redo');set('t-search','search');set('t-style','style');set('t-share','share');set('t-more','more');set('z-in','plus',20);set('z-out','minus',20);set('z-fit','fit',20);set('s-next','next',18);set('s-close','close',18);
   $('#b-new').innerHTML=uiIcon('plus',20,2.6)+'<span>Novo mapa</span>'}
-function openMore(){openSheet(shHead(M.name)+`<div class="sr" data-m="ren"><span>Renomear mapa</span></div><div class="sr" data-m="out"><span>Editar como texto</span></div><div class="sr" data-m="fit"><span>Ajustar à tela</span></div><div class="sr" data-m="dup"><span>Duplicar mapa</span></div><div class="sr" data-m="bl"><span>Mapas que apontam para este</span><span>${listMaps().filter(m=>m.id!==M.id&&mapRefs(m,M.id)).length}</span></div><div class="sr" data-m="list"><span>Ir para a lista de mapas</span></div>`,r=>{bindClose(r);
-  onSheet(r,'[data-m]',el=>{const a=el.dataset.m;closeSheet(true);if(a==='ren')askText('Renomear mapa',M.name,v=>{pushUndo();M.name=v;touch(M);updateBars()});else if(a==='out')openOutline();else if(a==='bl')openBacklinks();else if(a==='list')goHome(true);else if(a==='fit')fitView();else if(a==='dup'){const c=JSON.parse(JSON.stringify(M));c.id=uid();c.name=M.name+' (cópia)';c.cr=c.up=Date.now();const re=x=>{x.id=nid();(x.c||[]).forEach(re)};re(c.root);(c.fl||[]).forEach(re);c.rel=[];addMap(c);toast('Cópia criada na lista')}})})}
+function openMore(){openSheet(shHead(M.name)+`<div class="sr" data-m="ren"><span>Renomear mapa</span></div><div class="sr" data-m="out"><span>Editar como texto</span></div><div class="sr" data-m="fit"><span>Ajustar à tela</span></div><div class="sr" data-m="dup"><span>Duplicar mapa</span></div><div class="sr" data-m="cpm"><span>Copiar este mapa</span></div><div class="sr" data-m="bl"><span>Mapas que apontam para este</span><span>${listMaps().filter(m=>m.id!==M.id&&mapRefs(m,M.id)).length}</span></div><div class="sr" data-m="list"><span>Ir para a lista de mapas</span></div>`,r=>{bindClose(r);
+  onSheet(r,'[data-m]',el=>{const a=el.dataset.m;closeSheet(true);if(a==='ren')askText('Renomear mapa',M.name,v=>{pushUndo();M.name=v;touch(M);updateBars()});else if(a==='out')openOutline();else if(a==='cpm')copyMapOf(M);else if(a==='bl')openBacklinks();else if(a==='list')goHome(true);else if(a==='fit')fitView();else if(a==='dup'){const c=JSON.parse(JSON.stringify(M));c.id=uid();c.name=M.name+' (cópia)';c.cr=c.up=Date.now();const re=x=>{x.id=nid();(x.c||[]).forEach(re)};re(c.root);(c.fl||[]).forEach(re);c.rel=[];addMap(c);toast('Cópia criada na lista')}})})}
 function bindUI(){
   document.addEventListener('click',e=>{const t=e.target;
     const a=t.closest&&t.closest('[data-a]');if(a){const k=a.dataset.a;
@@ -1130,7 +1157,7 @@ function bindUI(){
   document.addEventListener('visibilitychange',()=>{if(document.hidden){flushPersist()}else if(CFG)syncSoon()});
   window.addEventListener('pagehide',()=>{flushPersist()});window.addEventListener('online',()=>{if(CFG)syncSoon()})}
 async function boot(){setIcons();
-  try{const rows=await IDB.all('m:');rows.forEach(([k,v])=>{if(v&&typeof v==='object')D.recs[k.slice(2)]=v});CFG=(await IDB.get('cfg'))||null}catch(e){}
+  try{const rows=await IDB.all('m:');rows.forEach(([k,v])=>{if(v&&typeof v==='object')D.recs[k.slice(2)]=v});CFG=(await IDB.get('cfg'))||null;CLIP=(await IDB.get('clip'))||null}catch(e){}
   bindEditor();bindGestures();bindKeys();bindUI();bindImagePicker();bindPdfPicker();bindImport();showView('list');
   if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
   if(CFG)syncSoon()}
