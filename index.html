@@ -163,7 +163,7 @@ input[type=range]{width:100%;margin:12px 0}
 <input type="file" id="f-imp" accept="application/json,.json" hidden>
 <script>
 'use strict';
-const VER='v8';
+const VER='v9';
 const FONT="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const FALL={sans:"-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",serif:"Georgia,'Times New Roman',serif",mono:"Menlo,Consolas,'Courier New',monospace",hand:"'Marker Felt','Comic Sans MS',cursive"};
 const FONTS=[['','Padrão','sans'],['Helvetica Neue','Helvetica Neue','sans'],['Arial','Arial','sans'],['Verdana','Verdana','sans'],['Trebuchet MS','Trebuchet MS','sans'],['Futura','Futura','sans'],['Avenir Next','Avenir Next','sans'],['Gill Sans','Gill Sans','sans'],['Optima','Optima','sans'],['DIN Alternate','DIN Alternate','sans'],['Thonburi','Thonburi','sans'],['Georgia','Georgia','serif'],['Times New Roman','Times New Roman','serif'],['Palatino','Palatino','serif'],['Charter','Charter','serif'],['Cochin','Cochin','serif'],['Baskerville','Baskerville','serif'],['Copperplate','Copperplate','serif'],['Courier New','Courier New','mono'],['Menlo','Menlo','mono'],['American Typewriter','American Typewriter','serif'],['Chalkboard SE','Chalkboard SE','hand'],['Noteworthy','Noteworthy','hand'],['Marker Felt','Marker Felt','hand']];
@@ -1140,7 +1140,7 @@ function makePdf(jpg,iw,ih,pw,ph,box,title){const enc=new TextEncoder(),parts=[]
   put(x+`trailer\n<< /Size 7 /Root 1 0 R /Info 6 0 R >>\nstartxref\n${xr}\n%%EOF`);
   const out=new Uint8Array(len);let p=0;parts.forEach(b=>{out.set(b,p);p+=b.length});return new Blob([out],{type:'application/pdf'})}
 const dataToBytes=d=>{const b=atob(d.split(',')[1]),o=new Uint8Array(b.length);for(let i=0;i<b.length;i++)o[i]=b.charCodeAt(i);return o};
-async function buildPdf(m,mode){const {cv,k,sc}=await renderCanvas(m,8000,{title:true,scale:mode==='size'?2.5:3});
+async function buildPdfRaster(m,mode){const {cv,k,sc}=await renderCanvas(m,8000,{title:true,scale:mode==='size'?2.5:3});
   const jpg=dataToBytes(cv.toDataURL('image/jpeg',.92)),iw=cv.width,ih=cv.height;let pw,ph,box;
   if(mode==='size'){const s=.75;pw=iw/k*s;ph=ih/k*s;box={x:0,y:0,w:pw,h:ph}}
   else{const land=iw>=ih;pw=land?841.89:595.28;ph=land?595.28:841.89;const mg=24,aw=pw-2*mg,ah=ph-2*mg,s=Math.min(aw/iw,ah/ih),w=iw*s,h=ih*s;box={x:(pw-w)/2,y:(ph-h)/2,w,h}}
@@ -1158,12 +1158,91 @@ function importBackup(txt){let o;try{o=JSON.parse(txt)}catch(e){return toast('Ar
 function bindImport(){$('#f-imp').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;importBackup(await f.text());e.target.value=''})}
 /* ---------- tela de compartilhar ---------- */
 function openExport(){const m=M;if(!m)return;let busy=false;
-  openSheet(shHead('Compartilhar')+`<div class="sr" data-e="pdfa"><span>PDF em A4 (ajustado à página)</span><span>PDF</span></div><div class="sr" data-e="pdfs"><span>PDF no tamanho do mapa</span><span>PDF</span></div><div class="sr" data-e="png"><span>Imagem PNG</span><span>PNG</span></div><div class="sr" data-e="txt"><span>Texto em tópicos</span><span>TXT</span></div><div class="sr" data-e="json"><span>Backup deste mapa</span><span>JSON</span></div><div class="note" id="en">O PDF é uma imagem do mapa: o texto não é selecionável nem pesquisável. Em mapas muito grandes a resolução é reduzida.</div>`,r=>{bindClose(r);
+  openSheet(shHead('Compartilhar')+`<div class="sr" data-e="pdfa"><span>PDF em A4 (ajustado à página)</span><span>PDF</span></div><div class="sr" data-e="pdfs"><span>PDF no tamanho do mapa</span><span>PDF</span></div><div class="sr" data-e="png"><span>Imagem PNG</span><span>PNG</span></div><div class="sr" data-e="txt"><span>Texto em tópicos</span><span>TXT</span></div><div class="sr" data-e="json"><span>Backup deste mapa</span><span>JSON</span></div><div class="note" id="en">O PDF é vetorial: zoom nítido e texto selecionável. As fontes viram as padrão do PDF (sem serifa, serifada ou monoespaçada); letras gregas e símbolos fora do latim entram como imagem.</div>`,r=>{bindClose(r);
     onSheet(r,'[data-e]',async el=>{if(busy)return;busy=true;const a=el.dataset.e,note=r.querySelector('#en');note.textContent='Gerando...';
       try{let res;if(a==='pdfa'||a==='pdfs'){const blob=await buildPdf(m,a==='pdfa'?'a4':'size');res=await deliver(blob,fname(m,'pdf'),'application/pdf')}
         else if(a==='png')res=await exportPng(m);else if(a==='txt')res=await deliver(new Blob([[m.root].concat(m.fl||[]).map(r=>toOutline(r)).join('\n')],{type:'text/plain'}),fname(m,'txt'),'text/plain');else res=await deliver(new Blob([mapBackup([m])],{type:'application/json'}),fname(m,'json'),'application/json');
         note.textContent=res==='download'?'Arquivo baixado.':res==='share'?'Compartilhado.':'Cancelado.'}
       catch(err){note.textContent='Falhou: '+(err&&err.message||'erro ao gerar')}finally{busy=false}})})}
+/* ---------- PDF vetorial (v9): desenho, texto e imagens como objetos do PDF; zoom nítido ---------- */
+const pn=v=>String(Math.round(v*100)/100);
+const pcol=(h,st)=>{const c=hex2rgb(h);return c.map(v=>(v/255).toFixed(3)).join(' ')+(st?' RG':' rg')};
+const WINA={8364:128,8218:130,402:131,8222:132,8230:133,8224:134,8225:135,710:136,8240:137,352:138,8249:139,338:140,381:142,8216:145,8217:146,8220:147,8221:148,8226:149,8211:150,8212:151,732:152,8482:153,353:154,8250:155,339:156,382:158,376:159};
+function waEnc(s){let o='';for(const ch of s){const c=ch.codePointAt(0);if((c>=32&&c<127)||(c>=160&&c<256))o+=ch;else if(WINA[c])o+=String.fromCharCode(WINA[c]);else if(c===8722)o+='-';else if(c===9)o+=' ';else return null}return o}
+const pesc=s=>s.replace(/[\\()]/g,'\\$&');
+const PFONT={sans:['Helvetica','Helvetica-Bold','Helvetica-Oblique','Helvetica-BoldOblique'],serif:['Times-Roman','Times-Bold','Times-Italic','Times-BoldItalic'],mono:['Courier','Courier-Bold','Courier-Oblique','Courier-BoldOblique']};
+const PMEAS={sans:'Helvetica,Arial,"Liberation Sans",sans-serif',serif:'"Times New Roman",Times,"Liberation Serif",serif',mono:'"Courier New",Courier,"Liberation Mono",monospace'};
+const pfam=ff=>{ff=ff||'';return /sans-serif$/.test(ff)||!ff?'sans':/serif$/.test(ff)?'serif':/monospace$/.test(ff)?'mono':'sans'};
+const _pm=document.createElement('canvas').getContext('2d');
+const pfw=(s,sz,fam,b,i)=>{_pm.font=(i?'italic ':'')+(b?'bold ':'')+sz+'px '+PMEAS[fam];return _pm.measureText(s).width};
+function arcC(x1,y1,rx,ry,phi,fa,fs,x2,y2){if(!rx||!ry)return[[x1,y1,x2,y2,x2,y2]];rx=Math.abs(rx);ry=Math.abs(ry);const ph=phi*Math.PI/180,cp=Math.cos(ph),sp=Math.sin(ph),dx=(x1-x2)/2,dy=(y1-y2)/2,x1p=cp*dx+sp*dy,y1p=-sp*dx+cp*dy,l=x1p*x1p/(rx*rx)+y1p*y1p/(ry*ry);if(l>1){const q=Math.sqrt(l);rx*=q;ry*=q}
+  const sg=fa===fs?-1:1,num=rx*rx*ry*ry-rx*rx*y1p*y1p-ry*ry*x1p*x1p,den=rx*rx*y1p*y1p+ry*ry*x1p*x1p,co=sg*Math.sqrt(Math.max(0,num/den)),cxp=co*rx*y1p/ry,cyp=-co*ry*x1p/rx,cx=cp*cxp-sp*cyp+(x1+x2)/2,cy=sp*cxp+cp*cyp+(y1+y2)/2;
+  const an=(ux,uy,vx,vy)=>Math.atan2(ux*vy-uy*vx,ux*vx+uy*vy),ux=(x1p-cxp)/rx,uy=(y1p-cyp)/ry,t1=an(1,0,ux,uy);let dt=an(ux,uy,(-x1p-cxp)/rx,(-y1p-cyp)/ry);if(!fs&&dt>0)dt-=2*Math.PI;else if(fs&&dt<0)dt+=2*Math.PI;
+  const n=Math.max(1,Math.ceil(Math.abs(dt)/(Math.PI/2)-1e-9)),d=dt/n,t=4/3*Math.tan(d/4),out=[],P=(a,b)=>[cp*rx*a-sp*ry*b+cx,sp*rx*a+cp*ry*b+cy];let a=t1;
+  for(let i=0;i<n;i++){const a2=a+d,c1=Math.cos(a),s1=Math.sin(a),c2=Math.cos(a2),s2=Math.sin(a2),p1=P(c1-t*s1,s1+t*c1),p2=P(c2+t*s2,s2-t*c2),e=P(c2,s2);out.push([p1[0],p1[1],p2[0],p2[1],e[0],e[1]]);a=a2}
+  return out}
+function pPath(d){const T=String(d).match(/[a-zA-Z]|-?\d*\.?\d+(?:e[-+]?\d+)?/g)||[];let i=0,o='',cx=0,cy=0,sx=0,sy=0,cmd='',lc=null;const nm=()=>parseFloat(T[i++]);
+  const C=(a,b,c,e,f,g)=>{o+=`${pn(a)} ${pn(b)} ${pn(c)} ${pn(e)} ${pn(f)} ${pn(g)} c\n`;lc=[c,e];cx=f;cy=g};
+  while(i<T.length){if(/[a-zA-Z]/.test(T[i]))cmd=T[i++];const rel=cmd===cmd.toLowerCase(),u=cmd.toUpperCase(),ox=rel?cx:0,oy=rel?cy:0;
+    if(u==='M'){const x=nm()+ox,y=nm()+oy;o+=`${pn(x)} ${pn(y)} m\n`;cx=sx=x;cy=sy=y;lc=null;cmd=rel?'l':'L'}
+    else if(u==='L'){const x=nm()+ox,y=nm()+oy;o+=`${pn(x)} ${pn(y)} l\n`;cx=x;cy=y;lc=null}
+    else if(u==='H'){const x=nm()+ox;o+=`${pn(x)} ${pn(cy)} l\n`;cx=x;lc=null}
+    else if(u==='V'){const y=nm()+oy;o+=`${pn(cx)} ${pn(y)} l\n`;cy=y;lc=null}
+    else if(u==='C'){const a=nm()+ox,b=nm()+oy,c=nm()+ox,e=nm()+oy,f=nm()+ox,g=nm()+oy;C(a,b,c,e,f,g)}
+    else if(u==='S'){const a=lc?2*cx-lc[0]:cx,b=lc?2*cy-lc[1]:cy,c=nm()+ox,e=nm()+oy,f=nm()+ox,g=nm()+oy;C(a,b,c,e,f,g)}
+    else if(u==='Q'){const qx=nm()+ox,qy=nm()+oy,x=nm()+ox,y=nm()+oy;C(cx+2/3*(qx-cx),cy+2/3*(qy-cy),x+2/3*(qx-x),y+2/3*(qy-y),x,y)}
+    else if(u==='A'){const rx=nm(),ry=nm(),ph=nm(),fa=nm(),fs=nm(),x=nm()+ox,y=nm()+oy;const x0=cx,y0=cy;arcC(x0,y0,rx,ry,ph,fa,fs,x,y).forEach(c=>C(c[0],c[1],c[2],c[3],c[4],c[5]));cx=x;cy=y}
+    else if(u==='Z'){o+='h\n';cx=sx;cy=sy;lc=null}
+    else{i++}}
+  return o}
+function pRR(x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));if(r<.01)return `${pn(x)} ${pn(y)} ${pn(w)} ${pn(h)} re\n`;const k=.5523*r,X=x+w,Y=y+h;
+  return `${pn(x+r)} ${pn(y)} m\n${pn(X-r)} ${pn(y)} l\n${pn(X-r+k)} ${pn(y)} ${pn(X)} ${pn(y+r-k)} ${pn(X)} ${pn(y+r)} c\n${pn(X)} ${pn(Y-r)} l\n${pn(X)} ${pn(Y-r+k)} ${pn(X-r+k)} ${pn(Y)} ${pn(X-r)} ${pn(Y)} c\n${pn(x+r)} ${pn(Y)} l\n${pn(x+r-k)} ${pn(Y)} ${pn(x)} ${pn(Y-r+k)} ${pn(x)} ${pn(Y-r)} c\n${pn(x)} ${pn(y+r)} l\n${pn(x)} ${pn(y+r-k)} ${pn(x+r-k)} ${pn(y)} ${pn(x+r)} ${pn(y)} c\nh\n`}
+const pCirc=(cx,cy,r)=>pRR(cx-r,cy-r,2*r,2*r,r);
+async function pZip(u8){if(typeof CompressionStream==='undefined')return null;try{const cs=new CompressionStream('deflate'),w=cs.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer())}catch(e){return null}}
+const lat1=s=>{const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i)&255;return u};
+async function buildPdfVec(m,mode){
+  const sc=buildScene(m,{ui:false}),b=sc.b,hdr=44,W=b.w,H=b.h+hdr,bg=sc.th.bg;let pw,ph,s,ox,oy;
+  if(mode==='size'){s=Math.min(.9,1400/Math.max(W,H));const mg=14;pw=W*s+2*mg;ph=H*s+2*mg;ox=mg;oy=mg}
+  else{const land=W>=H;pw=land?841.89:595.28;ph=land?595.28:841.89;const mg=24;s=Math.min(2,(pw-2*mg)/W,(ph-2*mg)/H);ox=(pw-W*s)/2;oy=(ph-H*s)/2}
+  const O=[],add=(dict,stream)=>{O.push({dict,stream});return O.length},FN={},XO={};let nF=0,nX=0;O.push(null,null,null,null,null);
+  const font=(fam,bo,it)=>{const k=fam+(bo?1:0)+(it?1:0);if(!FN[k]){const id=add(`<< /Type /Font /Subtype /Type1 /BaseFont /${PFONT[fam][(bo?1:0)+(it?2:0)]} /Encoding /WinAnsiEncoding >>`);FN[k]={n:'F'+(++nF),id}}return FN[k].n};
+  const imgObjs={};
+  const jpegOf=async id=>{if(imgObjs[id])return imgObjs[id];const me=m.imgs[id];let d=me.d;if(!/^data:image\/jpeg/i.test(d)){const im=await loadImg(d),cv=document.createElement('canvas');cv.width=me.w;cv.height=me.h;const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,me.w,me.h);c.drawImage(im,0,0,me.w,me.h);d=cv.toDataURL('image/jpeg',.9)}
+    const idn=add(`<< /Type /XObject /Subtype /Image /Width ${me.w} /Height ${me.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode`,dataToBytes(d));const nm='Im'+(++nX);XO[nm]=idn;return imgObjs[id]={nm}};
+  const bmpText=async(str,sz,ff,bo,col,w)=>{const k=4,cw=Math.ceil((w+6)*k),ch=Math.ceil(sz*1.7*k),cv=document.createElement('canvas');cv.width=cw;cv.height=ch;const c=cv.getContext('2d');c.fillStyle=col;c.font=(bo?'600 ':'400 ')+sz*k+'px '+(ff||FONT);c.textBaseline='alphabetic';c.fillText(str,3*k,sz*1.25*k);
+    const px=c.getImageData(0,0,cw,ch).data,rgb=new Uint8Array(cw*ch*3),al=new Uint8Array(cw*ch),cc=hex2rgb(col);for(let i=0;i<cw*ch;i++){rgb[i*3]=cc[0];rgb[i*3+1]=cc[1];rgb[i*3+2]=cc[2];al[i]=px[i*4+3]}
+    const zr=await pZip(rgb),za=await pZip(al),fl=z=>z?' /Filter /FlateDecode':'',sm=add(`<< /Type /XObject /Subtype /Image /Width ${cw} /Height ${ch} /ColorSpace /DeviceGray /BitsPerComponent 8${fl(za)}`,za||al),idn=add(`<< /Type /XObject /Subtype /Image /Width ${cw} /Height ${ch} /ColorSpace /DeviceRGB /BitsPerComponent 8 /SMask ${sm} 0 R${fl(zr)}`,zr||rgb),nm='Im'+(++nX);XO[nm]=idn;return {nm,w:cw/k,h:ch/k}};
+  const e0=ox-b.x*s,f0=ph-oy+(b.y-hdr)*s;let c=`${pcol(bg)}\n0 0 ${pn(pw)} ${pn(ph)} re f\nq ${s.toFixed(5)} 0 0 ${(-s).toFixed(5)} ${pn(e0)} ${pn(f0)} cm\n1 J 1 j\n`;
+  const textLine=async(str,x,y,sz,bo,it,ff,col,anchor)=>{if(!str)return;const fam=pfam(ff),aw=tw(str,sz,bo,ff),enc=waEnc(str),x0=anchor==='m'?x-aw/2:x;
+    if(enc!==null){const pw0=pfw(str,sz,fam,bo,it),tz=pw0>0?clamp(aw/pw0*100,60,140):100;c+=`${pcol(col)}\nBT /${font(fam,bo,it)} ${pn(sz)} Tf ${pn(tz)} Tz 1 0 0 -1 ${pn(x0)} ${pn(y)} Tm (${pesc(enc)}) Tj ET\n`}
+    else{const im=await bmpText(str,sz,ff,bo,col,aw);c+=`q ${pn(im.w)} 0 0 ${pn(-im.h)} ${pn(x0-3)} ${pn(y-sz*1.25+im.h)} cm /${im.nm} Do Q\n`}};
+  if(true){await textLine(m.name||'',b.x+16,b.y-hdr+28,18,true,false,FONT,sc.th.tx,null)}
+  for(const it of sc.items){switch(it.k){
+    case'p':c+=`${pcol(it.s,1)}\n${pn(it.w)} w\n${it.da?'['+it.da+'] 0 d\n':''}${pPath(it.d)}S\n${it.da?'[] 0 d\n':''}`;break;
+    case'fp':c+=`${pcol(it.f)}\n${pPath(it.d)}f\n`;break;
+    case'b':{const hf=it.f&&it.f!=='transparent',hs=!!it.s;if(!hf&&!hs)break;if(hf)c+=pcol(it.f)+'\n';if(hs)c+=`${pcol(it.s,1)}\n${pn(it.sw||1)} w\n`;c+=pRR(it.x,it.y,it.w,it.h,it.r)+(hf&&hs?'B':hf?'f':'S')+'\n';break}
+    case't':{const bo=!!it.b,ii=!!it.ph;for(let i=0;i<it.ls.length;i++){await textLine(it.ls[i],it.x,it.y+i*it.lh+it.lh/2+it.sz*.34,it.sz,bo,ii,it.ff,it.c,it.an)}break}
+    case'i':{const me=m.imgs&&m.imgs[it.id];if(!me)break;const im=await jpegOf(it.id),k=Math.max(it.w/me.w,it.h/me.h),dw=me.w*k,dh=me.h*k,dx=it.x+(it.w-dw)/2,dy=it.y+(it.h-dh)/2;c+=`q\n${pRR(it.x,it.y,it.w,it.h,4)}W n\n${pn(dw)} 0 0 ${pn(-dh)} ${pn(dx)} ${pn(dy+dh)} cm /${im.nm} Do\nQ\n`;break}
+    case'ic':{const k=it.sz/24;c+=`q ${k.toFixed(5)} 0 0 ${k.toFixed(5)} ${pn(it.x)} ${pn(it.y)} cm\n${pcol(it.c,1)}\n${pcol(it.c)}\n2 w\n`;
+      if(it.nm==='tk'){const p=it.p||0,R=TKR+1.5;if(p>=100){c+=pCirc(12,12,R)+'f\n'+pcol(bg,1)+'\n'+pPath('M8 12.5l3 3 5-6')+'S\n'}else{c+=pCirc(12,12,R)+'S\n';if(p>0)c+=pPath(tkArc(p))+'f\n'}}
+      else c+=pPath(ICONS[it.nm]||'')+'S\n';c+='Q\n';break}
+    case'tg':{c+=`${pcol(it.bg)}\n${pcol(it.col,1)}\n1.5 w\n${pCirc(it.x,it.y,it.r)}B\n`;await textLine(it.txt,it.x,it.y+3.5,it.txt.length>2?8:11,true,false,FONT,it.tx,'m');break}
+  }}
+  c+='Q\n';
+  let cb=lat1(c),cz=await pZip(cb);
+  O[3]={dict:`<< /Length 0${cz?' /Filter /FlateDecode':''}`,stream:cz||cb};
+  const fonts=Object.values(FN).map(f=>`/${f.n} ${f.id} 0 R`).join(' '),xos=Object.keys(XO).map(k=>`/${k} ${XO[k]} 0 R`).join(' ');
+  O[0]={dict:'<< /Type /Catalog /Pages 2 0 R >>'};O[1]={dict:'<< /Type /Pages /Kids [3 0 R] /Count 1 >>'};
+  O[2]={dict:`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pn(pw)} ${pn(ph)}] /Resources << /Font << ${fonts} >> /XObject << ${xos} >> >> /Contents 4 0 R >>`};
+  let t='';const nm=String(m.name||'Trama');for(let i=0;i<nm.length;i++)t+=nm.charCodeAt(i).toString(16).padStart(4,'0');
+  O[4]={dict:`<< /Title <FEFF${t}> /Producer (Trama) >>`};
+  const parts=[],off=[];let len=0;const put=x=>{const u=typeof x==='string'?lat1(x):x;parts.push(u);len+=u.length};
+  put('%PDF-1.5\n%\xE2\xE3\xCF\xD3\n');
+  O.forEach((o,i)=>{off[i]=len;put(`${i+1} 0 obj\n`);if(o.stream){put(o.dict.replace('/Length 0','')+` /Length ${o.stream.length} >>\nstream\n`);put(o.stream);put('\nendstream\n')}else put(o.dict+'\n');put('endobj\n')});
+  const xr=len;let x=`xref\n0 ${O.length+1}\n0000000000 65535 f \n`;off.forEach(o=>{x+=String(o).padStart(10,'0')+' 00000 n \n'});
+  put(x+`trailer\n<< /Size ${O.length+1} /Root 1 0 R /Info 5 0 R >>\nstartxref\n${xr}\n%%EOF`);
+  const out=new Uint8Array(len);let p=0;parts.forEach(u=>{out.set(u,p);p+=u.length});return new Blob([out],{type:'application/pdf'})}
+async function buildPdf(m,mode){try{return await buildPdfVec(m,mode)}catch(e){console.error('pdf vetorial falhou',e);return buildPdfRaster(m,mode)}}
 /* ---------- inicialização ---------- */
 function setIcons(){const set=(id,n,s)=>{const e=document.getElementById(id);if(e)e.innerHTML=uiIcon(n,s||22)};
   set('b-set','gear');set('t-back','back');set('t-undo','undo');set('t-redo','redo');set('t-search','search');set('t-style','style');set('t-share','share');set('t-more','more');set('z-in','plus',20);set('z-out','minus',20);set('z-fit','fit',20);set('s-next','next',18);set('s-close','close',18);
