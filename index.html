@@ -47,6 +47,13 @@ input,textarea{font:inherit}
 /* editor */
 .tb{display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;border-bottom:1px solid var(--line);background:var(--bg)}
 .tbt{flex:1;min-width:0;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 6px;cursor:pointer;text-align:left}
+.tabs{display:flex;gap:2px;overflow-x:auto;padding:5px 8px 0;border-bottom:1px solid var(--line);background:var(--bg);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tabs[hidden]{display:none}
+.tab{display:flex;align-items:center;gap:2px;flex:0 0 auto;max-width:190px;padding:0 4px 0 11px;height:32px;font-size:12.5px;color:var(--mut);background:var(--f);border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;cursor:pointer}
+.tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab.on{color:var(--txt);background:var(--c)}
+.tab .tx{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;color:var(--mut)}
 #cv{position:relative;flex:1;overflow:hidden;background:#fff}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none}
 #vp text,#vp image,#vp .ic{pointer-events:none}
@@ -137,6 +144,7 @@ input[type=range]{width:100%;margin:12px 0}
       <button class="ib" data-a="export" aria-label="Compartilhar" id="t-share"></button>
       <button class="ib" data-a="mtext" aria-label="Mais" id="t-more"></button>
     </div>
+    <div class="tabs" id="tabs" hidden></div>
     <div id="cv">
       <svg id="svg" xmlns="http://www.w3.org/2000/svg"><g id="vp"></g><g id="ov"></g></svg>
       <textarea id="ted" hidden rows="1" spellcheck="false" autocapitalize="sentences"></textarea>
@@ -155,7 +163,7 @@ input[type=range]{width:100%;margin:12px 0}
 <input type="file" id="f-imp" accept="application/json,.json" hidden>
 <script>
 'use strict';
-const VER='v7';
+const VER='v8';
 const FONT="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const FALL={sans:"-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",serif:"Georgia,'Times New Roman',serif",mono:"Menlo,Consolas,'Courier New',monospace",hand:"'Marker Felt','Comic Sans MS',cursive"};
 const FONTS=[['','Padrão','sans'],['Helvetica Neue','Helvetica Neue','sans'],['Arial','Arial','sans'],['Verdana','Verdana','sans'],['Trebuchet MS','Trebuchet MS','sans'],['Futura','Futura','sans'],['Avenir Next','Avenir Next','sans'],['Gill Sans','Gill Sans','sans'],['Optima','Optima','sans'],['DIN Alternate','DIN Alternate','sans'],['Thonburi','Thonburi','sans'],['Georgia','Georgia','serif'],['Times New Roman','Times New Roman','serif'],['Palatino','Palatino','serif'],['Charter','Charter','serif'],['Cochin','Cochin','serif'],['Baskerville','Baskerville','serif'],['Copperplate','Copperplate','serif'],['Courier New','Courier New','mono'],['Menlo','Menlo','mono'],['American Typewriter','American Typewriter','serif'],['Chalkboard SE','Chalkboard SE','hand'],['Noteworthy','Noteworthy','hand'],['Marker Felt','Marker Felt','hand']];
@@ -556,7 +564,7 @@ function openPdf(id){const f=findNode(id),fl=f&&f.n.pf&&M.files&&M.files[f.n.pf]
 /* ---------- links entre mapas ---------- */
 const mapRefs=(m,id)=>{const w=n=>n.mp===id||(n.c||[]).some(w);return w(m.root)||(m.fl||[]).some(w)};
 function followMap(id){const r=D.recs[id];if(!r||!r.v){toast('O mapa vinculado não existe mais');return}if(M&&id===M.id)return;
-  if(S.edit)endEdit(true);closeSheet(true);flushPersist();if(M){gcImgs(M);S.nav.push(M.id);if(S.nav.length>30)S.nav.shift()}openMap(id)}
+  if(S.edit)endEdit(true);closeSheet(true);flushPersist();if(M){leaveGc(M);S.nav.push(M.id);if(S.nav.length>30)S.nav.shift()}openMap(id)}
 function openMapLink(nodeId){const f=findNode(nodeId);if(!f||!f.n.mp)return;followMap(f.n.mp)}
 function pickMap(cb,title){const ms=listMaps().filter(m=>!M||m.id!==M.id);
   if(!ms.length){toast('Não há outros mapas para vincular');return}
@@ -664,7 +672,7 @@ function updateBars(){const bar=$('#bar'),hasSel=!!(S.sel&&findNode(S.sel)),root
   else{const sn=hasSel&&findNode(S.sel),list=hasSel?BAR_SEL.filter(b=>b[2]!=='rpos'||(sn&&(sn.n.ox||sn.n.oy))):BAR_NONE;h=list.map(b=>{let off='';if(anyRoot&&b[2]==='addsib')b=['sib','Outro pai','addroot'];if(anyRoot&&['up','dn','wrap'].includes(b[2]))off=' off';if(rootSel&&['dup','del'].includes(b[2]))off=' off';if(b[2]==='paste'&&!CLIP)off=' off';if(hasSel&&b[2]==='collapse'){const f=findNode(S.sel);if(!(f.n.c&&f.n.c.length))off=' off'}
       const on=(b[2]==='rel'&&S.relFrom)?' on':'';return `<button class="bb${off}${on}${b[2]==='del'?' dg':''}" data-b="${b[2]}">${uiIcon(b[0],22)}<span>${b[1]}</span></button>`}).join('')}
   if(bar.dataset.k!==h){bar.innerHTML=h;bar.dataset.k=h}
-  $('#t-undo').disabled=!UN.st.length;$('#t-redo').disabled=!UN.rd.length;$('#t-name').textContent=M?M.name:''}
+  $('#t-undo').disabled=!UN.st.length;$('#t-redo').disabled=!UN.rd.length;$('#t-name').textContent=M?M.name:'';if(M){const a=$('#tabs .tab.on span');if(a&&a.textContent!==M.name)a.textContent=M.name}}
 function barAction(a){const id=S.sel;
   switch(a){
    case'fit':fitView();break;case'mstyle':openMapStyle();break;case'outline':openOutline();break;
@@ -724,6 +732,26 @@ function pasteClip(tid){if(!M)return;if(!CLIP)return toast('Nada copiado');
     if(!first)first=r});
   S.sel=first.id;S.selRel=null;touch(M);draw();centerOn(first.id);
   toast('Colado: '+c.n+(c.n===1?' tópico':' tópicos')+(t?' dentro de "'+(t.n.t||'tópico').slice(0,24)+'"':''))}
+
+/* abas (v8): lista de mapas abertos; só neste aparelho (não sincroniza, não entra no backup) */
+let TABS=[],TABACT=null;const TAB_MAX=10;
+function tabSave(){IDB.set('tabs',{ids:TABS.map(t=>t.id),act:TABACT}).catch(()=>{})}
+function tabGet(id){return TABS.find(t=>t.id===id)}
+function tabsClean(){const n=TABS.length;TABS=TABS.filter(t=>D.recs[t.id]&&D.recs[t.id].v);if(TABACT&&!tabGet(TABACT))TABACT=null;if(TABS.length!==n)tabSave()}
+function tabStash(){if(!M)return;const t=tabGet(M.id);if(!t)return;if(UN.st.length>30)UN.st=UN.st.slice(-30);t.vw={x:VW.x,y:VW.y,k:VW.k};t.un=UN;t.v=M}
+function tabEnter(id){let t=tabGet(id);if(!t){t={id};TABS.push(t);
+    while(TABS.length>TAB_MAX){const o=TABS.find(x=>x.id!==id);if(!o)break;const m=D.recs[o.id]&&D.recs[o.id].v;if(m)gcImgs(m);TABS.splice(TABS.indexOf(o),1)}}
+  TABACT=id;tabSave();return t}
+function leaveGc(m){gcImgs(m);if(M&&m.id===M.id)UN={st:[],rd:[]};else{const t=tabGet(m.id);if(t)t.un=null}}
+function renderTabs(){tabsClean();const el=$('#tabs');if(!el)return;const show=S.view==='ed'&&TABS.length>=2;el.hidden=!show;if(!show){el.innerHTML='';return}
+  el.innerHTML=TABS.map(t=>`<div class="tab${t.id===TABACT?' on':''}" data-tab="${t.id}"><span>${esc(D.recs[t.id].v.name)}</span><button class="tx" data-tabx="${t.id}" aria-label="Fechar aba">${uiIcon('close',14)}</button></div>`).join('');
+  const on=el.querySelector('.on');if(on){const l=on.offsetLeft,r=l+on.offsetWidth;if(l<el.scrollLeft)el.scrollLeft=l-8;else if(r>el.scrollLeft+el.clientWidth)el.scrollLeft=r-el.clientWidth+8}}
+function switchTab(id){if(!M||id===M.id||!D.recs[id]||!D.recs[id].v)return;if(S.edit)endEdit(true);closeSheet(true);flushPersist();S.nav=[];openMap(id)}
+function closeTab(id){const t=tabGet(id);if(!t)return;const act=M&&M.id===id;if(act){if(S.edit)endEdit(true);closeSheet(true)}flushPersist();
+  const i=TABS.indexOf(t),m=D.recs[id]&&D.recs[id].v;if(m)leaveGc(m);TABS.splice(i,1);S.nav=S.nav.filter(x=>x!==id);
+  if(!act){tabSave();renderTabs();return}
+  const nx=TABS[Math.min(i,TABS.length-1)];tabSave();
+  if(nx){M=null;SC=null;openMap(nx.id)}else goHome(true)}
 /* ---------- outline <-> árvore ---------- */
 function parseOutline(txt){const lines=String(txt||'').replace(/\r/g,'').split('\n').filter(l=>l.trim()!==''),items=[];
   lines.forEach(l=>{const m=l.match(/^([ \t]*)(?:[-*•]\s+)?(.*)$/);let ind=0;for(const ch of m[1])ind+=ch==='\t'?2:1;ind=Math.floor(ind/2);items.push({ind,t:m[2].trim()})});
@@ -926,9 +954,9 @@ function thumbFor(m){try{const sc=buildScene(m,{ui:false,noImg:true});return sce
 function renderList(){const ms=listMaps(),el=$('#list');$('#l-sub').innerHTML=`<span class="syncdot ${SYN.state==='ok'?'ok':SYN.state==='er'?'er':''}"></span>${ms.length} ${ms.length===1?'mapa':'mapas'}`;
   if(!ms.length){el.innerHTML=`<div class="empty">Nenhum mapa ainda.<br>Toque em Novo mapa e escolha um modelo de estudo, brainstorming, consultório ou planejamento.</div>`;return}
   el.innerHTML=`<div class="grid">${ms.map(m=>`<div class="card" data-id="${m.id}"><div class="thumb" style="background:${themeOf(m).bg}">${thumbFor(m)}</div><button class="cm" data-more="${m.id}">${uiIcon('more',18)}</button><div class="cn"><b>${esc(m.name)}</b><small>${countAll(m.root)} tópicos · ${fdate(m.up)}</small></div></div>`).join('')}</div>`}
-function openMap(id){const r=D.recs[id];if(!r||!r.v)return;M=r.v;UN={st:[],rd:[]};S.sel=null;S.selRel=null;S.relFrom=null;S.q='';S.edit=null;showView('ed');draw();requestAnimationFrame(()=>{fitView()});if(typeof syncPull==='function')syncSoon()}
-function showView(v){S.view=v;if(v==='list')S.nav=[];$('#v-list').hidden=v!=='list';$('#v-ed').hidden=v!=='ed';if(v==='list'){renderList()}}
-function goHome(toList){if(S.edit)endEdit(true);closeSheet(true);flushPersist();if(M)gcImgs(M);
+function openMap(id){const r=D.recs[id];if(!r||!r.v)return;tabStash();M=r.v;const t=tabEnter(id),keep=t.un&&t.v===M;UN=keep?t.un:{st:[],rd:[]};S.sel=null;S.selRel=null;S.relFrom=null;S.q='';S.edit=null;showView('ed');renderTabs();draw();if(keep&&t.vw){VW.x=t.vw.x;VW.y=t.vw.y;VW.k=t.vw.k;applyVW()}else requestAnimationFrame(()=>{fitView()});if(typeof syncPull==='function')syncSoon()}
+function showView(v){S.view=v;if(v==='list')S.nav=[];$('#v-list').hidden=v!=='list';$('#v-ed').hidden=v!=='ed';if(v==='list'){tabsClean();renderList()}}
+function goHome(toList){if(S.edit)endEdit(true);closeSheet(true);flushPersist();tabStash();if(M)leaveGc(M);
   if(!toList)while(S.nav.length){const p=S.nav.pop();if(D.recs[p]&&D.recs[p].v){M=null;SC=null;openMap(p);return}}
   M=null;SC=null;showView('list');if(typeof schedSync==='function')schedSync()}
 function openNewMap(){let fam='';const draw2=()=>{const list=TEMPLATES.filter(t=>!fam?true:(t.fam===fam||t.id==='blank'));return list.map(t=>{const m=mapFromTemplate(t);return `<div class="card" data-t="${t.id}"><div class="thumb" style="background:${TH(m.th).bg}">${thumbFor(m)}</div><div class="cn"><b>${esc(t.n)}</b><small>${esc(t.fam||'Começar do zero')}</small></div></div>`}).join('')};
@@ -1072,7 +1100,7 @@ async function syncNow(){if(!CFG){return}if(SYN.busy){SYN.again=true;return}SYN.
     SYN.last=Date.now();setSyn('ok','Sincronizado '+new Date().toTimeString().slice(0,5))}
   catch(e){setSyn('er',e&&e.message&&!/Failed to fetch|Load failed|NetworkError/.test(e.message)?e.message:'Sem conexão')}
   finally{SYN.busy=false;if(SYN.again){SYN.again=false;schedSync()}}}
-function onMerged(){if(S.view==='ed'&&M){const r=D.recs[M.id];if(!r||!r.v){M=null;S.sheet&&closeSheet(true);showView('list');toast('Este mapa foi excluído em outro aparelho');return}
+function onMerged(){if(S.view==='ed')setTimeout(renderTabs,0);if(S.view==='ed'&&M){const r=D.recs[M.id];if(!r||!r.v){M=null;S.sheet&&closeSheet(true);showView('list');toast('Este mapa foi excluído em outro aparelho');return}
     if(r.v!==M&&!S.edit){M=r.v;UN={st:[],rd:[]};S.sel=S.sel&&findNode(S.sel)?S.sel:null;draw();toast('Mapa atualizado por outro aparelho')}}
   else if(S.view==='list')renderList()}
 function schedSync(){if(!CFG)return;clearTimeout(SYN.timer);SYN.timer=setTimeout(syncNow,2500)}
@@ -1153,11 +1181,13 @@ function bindUI(){
     const c=t.closest&&t.closest('#list [data-id]');if(c)openMap(c.dataset.id)});
   $('#sq').addEventListener('input',e=>{S.q=e.target.value;S.qi=0;searchUpdate();if(S.hits&&S.hits.length){S.sel=S.hits[0];draw();centerOn(S.hits[0])}});
   $('#sq').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchNext()}else if(e.key==='Escape')closeSearch()});
+  const tbs=$('#tabs');tbs.addEventListener('click',e=>{const x=e.target.closest('[data-tabx]');if(x){e.stopPropagation();closeTab(x.dataset.tabx);return}const t=e.target.closest('[data-tab]');if(t)switchTab(t.dataset.tab)});
+  tbs.addEventListener('auxclick',e=>{if(e.button!==1)return;const t=e.target.closest('[data-tab]');if(t){e.preventDefault();closeTab(t.dataset.tab)}});
   window.addEventListener('resize',()=>{if(S.view==='ed'&&SC)applyVW()});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){flushPersist()}else if(CFG)syncSoon()});
   window.addEventListener('pagehide',()=>{flushPersist()});window.addEventListener('online',()=>{if(CFG)syncSoon()})}
 async function boot(){setIcons();
-  try{const rows=await IDB.all('m:');rows.forEach(([k,v])=>{if(v&&typeof v==='object')D.recs[k.slice(2)]=v});CFG=(await IDB.get('cfg'))||null;CLIP=(await IDB.get('clip'))||null}catch(e){}
+  try{const rows=await IDB.all('m:');rows.forEach(([k,v])=>{if(v&&typeof v==='object')D.recs[k.slice(2)]=v});CFG=(await IDB.get('cfg'))||null;CLIP=(await IDB.get('clip'))||null;const tb=await IDB.get('tabs');if(tb&&tb.ids){TABS=tb.ids.filter(i=>D.recs[i]&&D.recs[i].v).map(i=>({id:i}));TABACT=tb.act}}catch(e){}
   bindEditor();bindGestures();bindKeys();bindUI();bindImagePicker();bindPdfPicker();bindImport();showView('list');
   if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
   if(CFG)syncSoon()}
