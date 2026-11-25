@@ -178,7 +178,7 @@ input[type=range]{width:100%;margin:12px 0}
 <input type="file" id="f-imp" accept="application/json,.json" hidden>
 <script>
 'use strict';
-const VER='v10';
+const VER='v11';
 const FONT="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const FALL={sans:"-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",serif:"Georgia,'Times New Roman',serif",mono:"Menlo,Consolas,'Courier New',monospace",hand:"'Marker Felt','Comic Sans MS',cursive"};
 const FONTS=[['','Padrão','sans'],['Helvetica Neue','Helvetica Neue','sans'],['Arial','Arial','sans'],['Verdana','Verdana','sans'],['Trebuchet MS','Trebuchet MS','sans'],['Futura','Futura','sans'],['Avenir Next','Avenir Next','sans'],['Gill Sans','Gill Sans','sans'],['Optima','Optima','sans'],['DIN Alternate','DIN Alternate','sans'],['Thonburi','Thonburi','sans'],['Georgia','Georgia','serif'],['Times New Roman','Times New Roman','serif'],['Palatino','Palatino','serif'],['Charter','Charter','serif'],['Cochin','Cochin','serif'],['Baskerville','Baskerville','serif'],['Copperplate','Copperplate','serif'],['Courier New','Courier New','mono'],['Menlo','Menlo','mono'],['American Typewriter','American Typewriter','serif'],['Chalkboard SE','Chalkboard SE','hand'],['Noteworthy','Noteworthy','hand'],['Marker Felt','Marker Felt','hand']];
@@ -327,10 +327,10 @@ const vis=n=>n.cl?[]:(n.c||[]);
 function emitSegs(I,g,top,x,cen,base){const f2=v=>+v.toFixed(2);
   g.segs.forEach((sg,i)=>{const ly=top+i*g.lh,bl=ly+g.lh/2+g.sz*.34;let lw=0;const ws=sg.map(s=>{const w=tw(s.t,g.sz,segBold(g.bold,s),g.ff,s.f.includes('i'));lw+=w;return w});let xs=cen?x-lw/2:x;
     sg.forEach((s,j)=>{const w=ws[j];if(!s.t)return;
-      if(s.h)I.push({k:'b',x:f2(xs-1),y:f2(bl-g.sz*.92),w:f2(w+2),h:f2(g.sz*1.2),r:2,f:s.h});
+      if(s.h)I.push({k:'b',x:f2(xs-1),y:f2(bl-g.sz*.92),w:f2(w+2),h:f2(g.sz*1.2),r:2,f:s.h,np:1});
       const col=s.c||(s.h?(lum(s.h)<.4?'#ececec':'#1f2430'):base),m=s.t.match(/^( *)([^]*?)( *)$/),core=m[2];
       if(core)I.push({k:'t',x:f2(xs+tw(m[1],g.sz,segBold(g.bold,s),g.ff,s.f.includes('i'))),y:ly,ls:[core],sz:g.sz,b:segBold(g.bold,s),it:s.f.includes('i'),c:col,lh:g.lh,an:null,ff:g.ff});
-      if(s.f.includes('u'))I.push({k:'p',d:`M${f2(xs)} ${f2(bl+g.sz*.14)}H${f2(xs+w)}`,s:col,w:f2(Math.max(.8,g.sz*.065))});
+      if(s.f.includes('u'))I.push({k:'p',d:`M${f2(xs)} ${f2(bl+g.sz*.14)}H${f2(xs+w)}`,s:col,w:f2(Math.max(.8,g.sz*.065)),np:1});
       xs+=w})})}
 /* ---------- posicionamento ---------- */
 function layoutOne(m){
@@ -548,9 +548,9 @@ function iconSvg(it){const k=it.sz/24,tr=`translate(${rnd(it.x)} ${rnd(it.y)}) s
   return `<g transform="${tr}" fill="none" stroke="${it.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[it.nm]||''}"/></g>`}
 function sceneSVGInner(sc,m,o){o=o||{};let s='';const bg=sc.th.bg;
   sc.items.forEach(it=>{switch(it.k){
-   case'p':s+=`<path d="${it.d}" fill="none" stroke="${it.s}" stroke-width="${it.w}" stroke-linecap="round" stroke-linejoin="round"${it.da?` stroke-dasharray="${it.da}"`:''}/>`;if(it.r)s+=`<path d="${it.d}" fill="none" stroke="transparent" stroke-width="16" data-r="${it.r}"/>`;break;
+   case'p':s+=`<path d="${it.d}" fill="none" stroke="${it.s}" stroke-width="${it.w}" stroke-linecap="round" stroke-linejoin="round"${it.da?` stroke-dasharray="${it.da}"`:''}${it.np?' pointer-events="none"':''}/>`;if(it.r)s+=`<path d="${it.d}" fill="none" stroke="transparent" stroke-width="16" data-r="${it.r}"/>`;break;
    case'fp':s+=`<path d="${it.d}" fill="${it.f}" stroke="none"/>`;break;
-   case'b':s+=`<rect x="${rnd(it.x)}" y="${rnd(it.y)}" width="${rnd(it.w)}" height="${rnd(it.h)}" rx="${it.r}" fill="${it.f}"${it.s?` stroke="${it.s}" stroke-width="${it.sw||1}"`:''}${it.n?` data-n="${it.n}"`:''}/>`;break;
+   case'b':s+=`<rect x="${rnd(it.x)}" y="${rnd(it.y)}" width="${rnd(it.w)}" height="${rnd(it.h)}" rx="${it.r}" fill="${it.f}"${it.s?` stroke="${it.s}" stroke-width="${it.sw||1}"`:''}${it.n?` data-n="${it.n}"`:''}${it.np?' pointer-events="none"':''}/>`;break;
    case't':s+=textSvg(it);break;
    case'i':{const im=m.imgs&&m.imgs[it.id];if(im)s+=`<image x="${rnd(it.x)}" y="${rnd(it.y)}" width="${rnd(it.w)}" height="${rnd(it.h)}" href="${im.d}" preserveAspectRatio="xMidYMid slice"/>`;break}
    case'ic':it.cInv=bg;s+=iconSvg(it);break;
